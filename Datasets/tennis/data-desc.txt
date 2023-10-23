@@ -1,0 +1,14 @@
+| label values
+
+Yes, No
+
+| attributes
+
+Outlook:    Sunny, Overcast, Rain
+Temp:       Hot, Medium, Cool
+Humidity:   High, Normal, Low
+Wind:       Strong, Weak
+
+| columns
+
+outlook,temp,humidity,wind,play
