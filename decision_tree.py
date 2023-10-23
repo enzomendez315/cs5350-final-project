@@ -241,11 +241,15 @@ def main():
                                     'occupation','relationship','race','sex', 'capital-gain', 'capital-loss', 
                                     'hours-per-week', 'native-country']
     income_test_dataset['label'] = ''
+        # Create copy of training dataset for predicting
+    income_predicted_dataset = pd.DataFrame(income_train_dataset)
+    income_predicted_dataset['label'] = ''   # or = np.nan for numerical columns
         # Construct the tree, predict and compare
     income_tree = DT.ID3(income_train_dataset, income_features, 5)
+    income_predicted_dataset = DT.predict(income_tree, income_predicted_dataset)
     income_test_dataset = DT.predict(income_tree, income_test_dataset)
-    income_training_error = DT.prediction_error(income_train_dataset['label'].to_numpy(), income_test_dataset['label'].to_numpy())
-    DT.print_tree(income_tree)
+    income_training_error = DT.prediction_error(income_train_dataset['label'].to_numpy(), income_predicted_dataset['label'].to_numpy())
+    #DT.print_tree(income_tree)
     print('The training error for this tree is', income_training_error)
 
     # # Using tennis dataset
