@@ -2,6 +2,8 @@ import os
 import numpy as np
 import pandas as pd
 import random
+import csv
+from sklearn.metrics import roc_auc_score
 
 class DecisionTree:
     def entropy(self, dataset):
@@ -103,7 +105,7 @@ class DecisionTree:
                     # Add the subtree ID3(S_v, features - {purest_feature}) below this branch
                     if purest_feature in features:
                         new_features = {key: value for key, value in features.items() if key != purest_feature}
-                    subtree_node = self.ID3(subset, features, depth - 1)
+                    subtree_node = self.ID3(subset, new_features, depth - 1)
                     root.values[value] = subtree_node
             return root
         
@@ -173,7 +175,7 @@ class DecisionTree:
 
     def print_tree(self, tree, indent=0):
         if not tree.values:
-            print(" " * indent + tree.label)
+            print(" " * indent + str(tree.label))
             return
         
         print(" " * indent + f"{tree.feature}:")
@@ -242,15 +244,31 @@ def main():
                                     'hours-per-week', 'native-country']
     income_test_dataset['label'] = ''
         # Create copy of training dataset for predicting
-    income_predicted_dataset = pd.DataFrame(income_train_dataset)
-    income_predicted_dataset['label'] = ''   # or = np.nan for numerical columns
+    income_predicted_train_dataset = pd.DataFrame(income_train_dataset)
+    income_predicted_train_dataset['label'] = ''   # or = np.nan for numerical columns
         # Construct the tree, predict and compare
     income_tree = DT.ID3(income_train_dataset, income_features, 5)
-    income_predicted_dataset = DT.predict(income_tree, income_predicted_dataset)
+    income_predicted_train_dataset = DT.predict(income_tree, income_predicted_train_dataset)
     income_test_dataset = DT.predict(income_tree, income_test_dataset)
-    income_training_error = DT.prediction_error(income_train_dataset['label'].to_numpy(), income_predicted_dataset['label'].to_numpy())
-    #DT.print_tree(income_tree)
+    y_train = income_train_dataset['label'].to_numpy()
+    y_train_predicted = income_predicted_train_dataset['label'].to_numpy()
+    y_test_predicted = income_test_dataset['label'].to_numpy()
+    income_training_error = DT.prediction_error(y_train, y_train_predicted)
+    DT.print_tree(income_tree)
     print('The training error for this tree is', income_training_error)
+    print('Score is', roc_auc_score(y_train, y_train_predicted))
+
+    # Create csv file
+    csv_predicton = 'prediction_decision_tree.csv'
+    with open(csv_predicton, 'w', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile)
+
+        # Write header
+        csv_writer.writerow(['ID', 'Prediction'])
+
+        for i, _ in enumerate(y_test_predicted, start=1):
+            csv_writer.writerow([i, y_test_predicted[i-1]])
+
 
     # # Using tennis dataset
     #     # Upload training dataset
