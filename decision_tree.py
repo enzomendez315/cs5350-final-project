@@ -250,6 +250,7 @@ def main():
     income_tree = DT.ID3(income_train_dataset, income_features, 5)
     income_predicted_train_dataset = DT.predict(income_tree, income_predicted_train_dataset)
     income_test_dataset = DT.predict(income_tree, income_test_dataset)
+        # Get array predictions
     y_train = income_train_dataset['label'].to_numpy()
     y_train_predicted = income_predicted_train_dataset['label'].to_numpy()
     y_test_predicted = income_test_dataset['label'].to_numpy()

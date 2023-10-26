@@ -2,8 +2,9 @@ import os
 import numpy as np
 import pandas as pd
 import random
-import matplotlib.pyplot as plt
+import csv
 import time
+from sklearn.metrics import roc_auc_score
 
 class DecisionTree:
     def entropy(self, dataset):
@@ -220,8 +221,9 @@ class RandomForest:
 
         # Construct the trees and store their predictions
         for _ in range(number_of_trees):
+            print(_)
             random_sample = DT.dataset_sample(train_dataset)
-            tree = DT.ID3(random_sample, features, 20, number_of_features)
+            tree = DT.ID3(random_sample, features, number_of_features, 20)
             prediction = DT.predict(tree, test_dataset, features)
             predictions.append(prediction['label'].to_numpy())
         
@@ -296,21 +298,19 @@ def main():
         # Create copy of training dataset for predicting
     income_predicted_train_dataset = pd.DataFrame(income_train_dataset)
     income_predicted_train_dataset['label'] = ''   # or = np.nan for numerical columns
-        # Construct the tree, predict and compare
-    income_tree = DT.ID3(income_train_dataset, income_features, 5)
-    #income_forest = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 2)
-    income_predicted_train_dataset = DT.predict(income_tree, income_predicted_train_dataset)
-    income_test_dataset = DT.predict(income_tree, income_test_dataset)
-    y_train = income_train_dataset['label'].to_numpy()
-    y_train_predicted = income_predicted_train_dataset['label'].to_numpy()
+        # Construct forest, predict and compare
+    # income_predicted_train_dataset = RF.random_forest(income_train_dataset, income_predicted_train_dataset, income_features, 50, 5)
+    income_test_dataset = RF.random_forest(income_train_dataset, income_test_dataset, income_features, 50, 5)
+        # Get array predictions
+    # y_train = income_train_dataset['label'].to_numpy()
+    # y_train_predicted = income_predicted_train_dataset['label'].to_numpy()
     y_test_predicted = income_test_dataset['label'].to_numpy()
-    income_training_error = DT.prediction_error(y_train, y_train_predicted)
-    DT.print_tree(income_tree)
-    print('The training error for this tree is', income_training_error)
-    print('Score is', roc_auc_score(y_train, y_train_predicted))
+    # income_training_error = DT.prediction_error(y_train, y_train_predicted)
+    # print('The training error for this tree is', income_training_error)
+    # print('Score is', roc_auc_score(y_train, y_train_predicted))
 
     # Create csv file
-    csv_predicton = 'prediction_decision_tree.csv'
+    csv_predicton = 'prediction_random_forest.csv'
     with open(csv_predicton, 'w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile)
 
@@ -320,73 +320,73 @@ def main():
         for i, _ in enumerate(y_test_predicted, start=1):
             csv_writer.writerow([i, y_test_predicted[i-1]])
 
-    # Using bank dataset
-        # Upload training dataset
-    bank_train_dataset = pd.read_csv(bank_train_path, header=None)
-    bank_train_dataset.columns = ['age','job','marital','education',
-                                'default','balance','housing', 'loan', 
-                                'contact', 'day', 'month', 'duration', 
-                                'campaign', 'pdays', 'previous', 'poutcome', 'label']
-    bank_features = {'age': [], 
-                    'job': ['admin', 'unknown', 'unemployed', 'management', 
-                            'housemaid', 'entrepreneur', 'student', 'blue-collar', 
-                            'self-employed', 'retired', 'technician', 'services'], 
-                    'marital': ['married', 'divorced', 'single'], 
-                    'education': ['unknown', 'primary', 'secondary', 'tertiary'], 
-                    'default': ['yes', 'no'], 
-                    'balance': [], 
-                    'housing': ['yes', 'no'], 
-                    'loan': ['yes', 'no'], 
-                    'contact': ['unknown', 'telephone', 'cellular'], 
-                    'day': [], 
-                    'month': ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 
-                              'jul', 'aug', 'sep', 'oct', 'nov', 'dec'],
-                    'duration': [], 
-                    'campaign': [],
-                    'pdays': [], 
-                    'previous': [],
-                    'poutcome': ['unknown', 'other', 'failure', 'success']}
-        # Upload testing dataset
-    bank_test_dataset = pd.read_csv(bank_test_path, header=None)
-    bank_test_dataset.columns = ['age','job','marital','education',
-                                'default','balance','housing', 'loan', 
-                                'contact', 'day', 'month', 'duration', 
-                                'campaign', 'pdays', 'previous', 'poutcome', 'label']
-        # Create copy of testing dataset for predicting
-    bank_predicted_dataset = pd.DataFrame(bank_test_dataset)
-    bank_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
+    # # Using bank dataset
+    #     # Upload training dataset
+    # bank_train_dataset = pd.read_csv(bank_train_path, header=None)
+    # bank_train_dataset.columns = ['age','job','marital','education',
+    #                             'default','balance','housing', 'loan', 
+    #                             'contact', 'day', 'month', 'duration', 
+    #                             'campaign', 'pdays', 'previous', 'poutcome', 'label']
+    # bank_features = {'age': [], 
+    #                 'job': ['admin', 'unknown', 'unemployed', 'management', 
+    #                         'housemaid', 'entrepreneur', 'student', 'blue-collar', 
+    #                         'self-employed', 'retired', 'technician', 'services'], 
+    #                 'marital': ['married', 'divorced', 'single'], 
+    #                 'education': ['unknown', 'primary', 'secondary', 'tertiary'], 
+    #                 'default': ['yes', 'no'], 
+    #                 'balance': [], 
+    #                 'housing': ['yes', 'no'], 
+    #                 'loan': ['yes', 'no'], 
+    #                 'contact': ['unknown', 'telephone', 'cellular'], 
+    #                 'day': [], 
+    #                 'month': ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 
+    #                           'jul', 'aug', 'sep', 'oct', 'nov', 'dec'],
+    #                 'duration': [], 
+    #                 'campaign': [],
+    #                 'pdays': [], 
+    #                 'previous': [],
+    #                 'poutcome': ['unknown', 'other', 'failure', 'success']}
+    #     # Upload testing dataset
+    # bank_test_dataset = pd.read_csv(bank_test_path, header=None)
+    # bank_test_dataset.columns = ['age','job','marital','education',
+    #                             'default','balance','housing', 'loan', 
+    #                             'contact', 'day', 'month', 'duration', 
+    #                             'campaign', 'pdays', 'previous', 'poutcome', 'label']
+    #     # Create copy of testing dataset for predicting
+    # bank_predicted_dataset = pd.DataFrame(bank_test_dataset)
+    # bank_predicted_dataset['label'] = ""   # or = np.nan for numerical columns
 
-    training_errors = []
-    testing_errors = []
+    # training_errors = []
+    # testing_errors = []
 
-    # Vary the number of trees from 1 to 500, report how the training 
-    # and test errors vary along with the tree number in a figure.
-    for number_of_trees in range(1, 501):
-        start_time = time.time()
+    # # Vary the number of trees from 1 to 500, report how the training 
+    # # and test errors vary along with the tree number in a figure.
+    # for number_of_trees in range(1, 501):
+    #     start_time = time.time()
 
-        bank_predicted_dataset = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 2)
-        bank_training_error = DT.prediction_error(bank_train_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
-        bank_testing_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
-        training_errors.append(bank_training_error)
-        testing_errors.append(bank_testing_error)
+    #     bank_predicted_dataset = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 2)
+    #     bank_training_error = DT.prediction_error(bank_train_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+    #     bank_testing_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+    #     training_errors.append(bank_training_error)
+    #     testing_errors.append(bank_testing_error)
 
-        # bank_predicted_dataset = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 4)
-        # bank_training_error = DT.prediction_error(bank_train_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
-        # bank_testing_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
-        # training_errors.append(bank_training_error)
-        # testing_errors.append(bank_testing_error)
+    #     # bank_predicted_dataset = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 4)
+    #     # bank_training_error = DT.prediction_error(bank_train_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+    #     # bank_testing_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+    #     # training_errors.append(bank_training_error)
+    #     # testing_errors.append(bank_testing_error)
 
-        # bank_predicted_dataset = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 6)
-        # bank_training_error = DT.prediction_error(bank_train_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
-        # bank_testing_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
-        # training_errors.append(bank_training_error)
-        # testing_errors.append(bank_testing_error)
+    #     # bank_predicted_dataset = RF.random_forest(bank_train_dataset, bank_predicted_dataset, bank_features, number_of_trees, 6)
+    #     # bank_training_error = DT.prediction_error(bank_train_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+    #     # bank_testing_error = DT.prediction_error(bank_test_dataset['label'].to_numpy(), bank_predicted_dataset['label'].to_numpy())
+    #     # training_errors.append(bank_training_error)
+    #     # testing_errors.append(bank_testing_error)
 
-        end_time=time.time()
-        total_time = end_time - start_time
-        print('Random forest using', number_of_trees, 'trees:')
-        print('Training error is', bank_testing_error, 'and testing error is', bank_testing_error)
-        print('Took', total_time, 'seconds')
+    #     end_time=time.time()
+    #     total_time = end_time - start_time
+    #     print('Random forest using', number_of_trees, 'trees:')
+    #     print('Training error is', bank_testing_error, 'and testing error is', bank_testing_error)
+    #     print('Took', total_time, 'seconds')
 
 
     # tennis_train_path = os.path.join(script_directory, '..', 'Datasets', 'tennis', 'train.csv')
