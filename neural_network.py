@@ -7,11 +7,11 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 import itertools
 import csv
-from sklearn.metrics import roc_auc_score
 
 # DELETE LATER ---------------------------------------------------------
 from sklearn.datasets import make_circles
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_auc_score
 # DELETE LATER ---------------------------------------------------------
 
 class NeuralNetwork(nn.Module):
@@ -158,25 +158,45 @@ def main():
     income_test_dataset.columns = ['age','workclass','fnlwgt','education','education-num','marital-status',
                                     'occupation','relationship','race','sex', 'capital-gain', 'capital-loss', 
                                     'hours-per-week', 'native-country']
-    income_test_dataset['label'] = ''
+    income_test_dataset['label'] = 1
+
+    # Handle missing values
+    for feature in income_train_dataset.columns:
+        most_common_value = income_train_dataset[feature].value_counts().index[0]
+        if most_common_value == '?':
+                most_common_value = income_train_dataset[feature].value_counts().index[1]
+        income_train_dataset[feature] = income_train_dataset[feature].replace('?', most_common_value)
+        income_test_dataset[feature] = income_test_dataset[feature].replace('?', most_common_value)
 
     # Convert non-numeric values to numbers
-    
+    for feature, feature_values in income_features.items():
+        numeric_value = 1
+        for feature_value in feature_values:
+            income_train_dataset[feature] = income_train_dataset[feature].replace(feature_value, numeric_value)
+            income_test_dataset[feature] = income_test_dataset[feature].replace(feature_value, numeric_value)
+            numeric_value += 1
+
+    # count_train = income_train_dataset.apply(lambda x: x.value_counts().get('?', 0)).sum() #3306
+    # count_test = income_test_dataset.apply(lambda x: x.value_counts().get('?', 0)).sum() #3159
     
     # Create arrays based on dataframes
     X_train = income_train_dataset.drop('label', axis=1).to_numpy()
     X_test = income_test_dataset.drop('label', axis=1).to_numpy()
     y_train = income_train_dataset['label'].to_numpy()
     y_test = income_test_dataset['label'].to_numpy()
+
     # Create train dataset
     train_data = Data(X_train, y_train)
-    train_dataloader = DataLoader(dataset=train_data, batch_size=200, shuffle=True)
+    train_dataloader = DataLoader(dataset=train_data, batch_size=25000, shuffle=True)
+
     # Create test dataset
     test_data = Data(X_test, y_test)
-    test_dataloader = DataLoader(dataset=test_data, batch_size=200, shuffle=True)
+    test_dataloader = DataLoader(dataset=test_data, batch_size=25000, shuffle=True)
 
     network.train(train_dataloader)
+    network.predict(train_dataloader)
     y_predicted = network.predict(test_dataloader)
+    print()
 
     # # DELETE LATER ---------------------------------------------------------
 
@@ -199,7 +219,7 @@ def main():
 
 
     # Create csv file
-    csv_predicton = 'prediction_decision_tree.csv'
+    csv_predicton = 'prediction_neural_network.csv'
     with open(csv_predicton, 'w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile)
 
