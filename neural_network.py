@@ -5,8 +5,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
+import itertools
 import csv
 from sklearn.metrics import roc_auc_score
+
+# DELETE LATER ---------------------------------------------------------
+from sklearn.datasets import make_circles
+from sklearn.model_selection import train_test_split
+# DELETE LATER ---------------------------------------------------------
 
 class NeuralNetwork(nn.Module):
     def __init__(self, n_inputs=14, n_hidden_neurons=20, n_outputs=1):
@@ -24,13 +30,73 @@ class NeuralNetwork(nn.Module):
         x = F.sigmoid(self.layer3(x))
         return x
     
-    def train(self, inputs, labels, learning_rate=0.1, epochs=100):
+    def train(self, dataset, learning_rate=0.1, epochs=100):
         # Loss function is binary crossentropy
         loss_function = nn.BCELoss()
+        losses = []
         # Optimizer is stochastic gradient descent
         SGD = torch.optim.SGD(self.parameters(), lr=learning_rate)
         for epoch in range(epochs):
-            pass
+            for X, y in dataset:
+                # Set gradients to zero
+                SGD.zero_grad()
+                prediction = self.forward(X)
+                loss = loss_function(prediction, y.unsqueeze(-1))
+                losses.append(loss.item())
+                loss.backward()
+                SGD.step()
+        print('Training complete')
+
+    def predict(self, dataset):
+        y_predicted = []
+        with torch.no_grad():
+            for X, y in dataset:
+                outputs = self.forward(X)
+                # Create numpy array with predictions
+                predicted = np.where(outputs < 0.5, 0, 1)
+                # Convert array to regular list
+                predicted = list(itertools.chain(*predicted))
+                y_predicted.append(predicted)
+            return y_predicted
+
+    def predict(self, dataset):
+        y_predicted = []
+        y_actual = []
+        total = 0
+        incorrect = 0
+        with torch.no_grad():
+            for X, y in dataset:
+                outputs = self.forward(X)
+                # Create numpy array with predictions
+                predicted = np.where(outputs < 0.5, 0, 1)
+                # Convert array to regular list
+                predicted = list(itertools.chain(*predicted))
+                y_predicted.append(predicted)
+                y_actual.append(y)
+                total += y.size(0)
+                incorrect += (predicted != y.numpy()).sum().item()
+                print('Error is', incorrect / total)
+            return y_predicted
+        
+    # def predict(self, dataset):
+    #     y_predicted = []
+    #     with torch.no_grad():
+    #         for X, y in dataset:
+    #             outputs = self.forward(X)
+    #             # Create numpy array with predictions
+    #             predicted = np.where(outputs < 0.5, 0, 1)
+    #             # Convert array to regular list
+    #             predicted = list(itertools.chain(*predicted))
+    #             y_predicted.append(predicted)
+    #         return y_predicted
+        
+    # def compute_error(self, y_actual, y_predicted):
+    #     incorrect = 0
+    #     for i in range(len(y_actual)):
+    #         if y_actual[i] != y_predicted[i]:
+    #             incorrect += 1
+    #     print('Error is', incorrect / len(y_actual))
+    #     return incorrect / len(y_actual)
 
 class Data(Dataset):
     def __init__(self, X, y):
@@ -54,8 +120,7 @@ def main():
 
     network = NeuralNetwork()
 
-    # Using car dataset
-        # Upload training dataset
+    # Upload training dataset
     income_train_dataset = pd.read_csv(income_train_path, header=None)
     income_train_dataset.columns = ['age','workclass','fnlwgt','education','education-num','marital-status',
                                     'occupation','relationship','race','sex', 'capital-gain', 'capital-loss', 
@@ -88,18 +153,49 @@ def main():
                                        'Laos', 'Ecuador', 'Taiwan', 'Haiti', 'Columbia', 'Hungary', 'Guatemala', 
                                        'Nicaragua', 'Scotland', 'Thailand', 'Yugoslavia', 'El-Salvador', 'Trinadad&Tobago', 
                                        'Peru', 'Hong', 'Holand-Netherlands']}
-        # Upload testing dataset
+    # Upload testing dataset
     income_test_dataset = pd.read_csv(income_test_path, header=None)
     income_test_dataset.columns = ['age','workclass','fnlwgt','education','education-num','marital-status',
                                     'occupation','relationship','race','sex', 'capital-gain', 'capital-loss', 
                                     'hours-per-week', 'native-country']
     income_test_dataset['label'] = ''
-        # Create copy of training dataset for predicting
-    income_predicted_train_dataset = pd.DataFrame(income_train_dataset)
-    income_predicted_train_dataset['label'] = ''   # or = np.nan for numerical columns
 
-    data = Data()
+    # Convert non-numeric values to numbers
+    
+    
+    # Create arrays based on dataframes
+    X_train = income_train_dataset.drop('label', axis=1).to_numpy()
+    X_test = income_test_dataset.drop('label', axis=1).to_numpy()
+    y_train = income_train_dataset['label'].to_numpy()
+    y_test = income_test_dataset['label'].to_numpy()
+    # Create train dataset
+    train_data = Data(X_train, y_train)
+    train_dataloader = DataLoader(dataset=train_data, batch_size=200, shuffle=True)
+    # Create test dataset
+    test_data = Data(X_test, y_test)
+    test_dataloader = DataLoader(dataset=test_data, batch_size=200, shuffle=True)
 
+    network.train(train_dataloader)
+    y_predicted = network.predict(test_dataloader)
+
+    # # DELETE LATER ---------------------------------------------------------
+
+    # t_network = NeuralNetwork(2, 10, 1)
+
+    # X, y = make_circles(n_samples = 10000, noise= 0.05, random_state=26)
+
+    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.33, random_state=26)
+
+    # train_data = Data(X_train, y_train)
+    # train_dataloader = DataLoader(dataset=train_data, batch_size=200, shuffle=True)
+
+    # test_data = Data(X_test, y_test)
+    # test_dataloader = DataLoader(dataset=test_data, batch_size=200, shuffle=True)
+
+    # t_network.train(train_dataloader)
+    # t_network.predict(test_dataloader)
+
+    # # DELETE LATER ---------------------------------------------------------
 
 
     # Create csv file
@@ -110,8 +206,8 @@ def main():
         # Write header
         csv_writer.writerow(['ID', 'Prediction'])
 
-        for i, _ in enumerate(y_test_predicted, start=1):
-            csv_writer.writerow([i, y_test_predicted[i-1]])
+        for i, _ in enumerate(y_predicted, start=1):
+            csv_writer.writerow([i, y_predicted[i-1]])
 
 if __name__ == "__main__":
     main()
