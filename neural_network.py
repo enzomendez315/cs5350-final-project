@@ -43,18 +43,6 @@ class NeuralNetwork(nn.Module):
 
     def predict(self, dataset):
         y_predicted = []
-        with torch.no_grad():
-            for X, y in dataset:
-                outputs = self.forward(X)
-                # Create numpy array with predictions
-                predicted = np.where(outputs < 0.5, 0, 1)
-                # Convert array to regular list
-                predicted = list(itertools.chain(*predicted))
-                y_predicted.append(predicted)
-            return y_predicted
-
-    def predict(self, dataset):
-        y_predicted = []
         y_actual = []
         total = 0
         incorrect = 0
