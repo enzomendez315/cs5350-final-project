@@ -8,12 +8,6 @@ from torch.utils.data import Dataset, DataLoader
 import itertools
 import csv
 
-# DELETE LATER ---------------------------------------------------------
-from sklearn.datasets import make_circles
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_auc_score
-# DELETE LATER ---------------------------------------------------------
-
 class NeuralNetwork(nn.Module):
     def __init__(self, n_inputs=14, n_hidden_neurons=20, n_outputs=1):
         super(NeuralNetwork, self).__init__()
@@ -77,26 +71,6 @@ class NeuralNetwork(nn.Module):
                 incorrect += (predicted != y.numpy()).sum().item()
                 print('Error is', incorrect / total)
             return y_predicted
-        
-    # def predict(self, dataset):
-    #     y_predicted = []
-    #     with torch.no_grad():
-    #         for X, y in dataset:
-    #             outputs = self.forward(X)
-    #             # Create numpy array with predictions
-    #             predicted = np.where(outputs < 0.5, 0, 1)
-    #             # Convert array to regular list
-    #             predicted = list(itertools.chain(*predicted))
-    #             y_predicted.append(predicted)
-    #         return y_predicted
-        
-    # def compute_error(self, y_actual, y_predicted):
-    #     incorrect = 0
-    #     for i in range(len(y_actual)):
-    #         if y_actual[i] != y_predicted[i]:
-    #             incorrect += 1
-    #     print('Error is', incorrect / len(y_actual))
-    #     return incorrect / len(y_actual)
 
 class Data(Dataset):
     def __init__(self, X, y):
@@ -175,9 +149,6 @@ def main():
             income_train_dataset[feature] = income_train_dataset[feature].replace(feature_value, numeric_value)
             income_test_dataset[feature] = income_test_dataset[feature].replace(feature_value, numeric_value)
             numeric_value += 1
-
-    # count_train = income_train_dataset.apply(lambda x: x.value_counts().get('?', 0)).sum() #3306
-    # count_test = income_test_dataset.apply(lambda x: x.value_counts().get('?', 0)).sum() #3159
     
     # Create arrays based on dataframes
     X_train = income_train_dataset.drop('label', axis=1).to_numpy()
@@ -196,36 +167,14 @@ def main():
     network.train(train_dataloader)
     network.predict(train_dataloader)
     y_predicted = network.predict(test_dataloader)
-    print()
-
-    # # DELETE LATER ---------------------------------------------------------
-
-    # t_network = NeuralNetwork(2, 10, 1)
-
-    # X, y = make_circles(n_samples = 10000, noise= 0.05, random_state=26)
-
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.33, random_state=26)
-
-    # train_data = Data(X_train, y_train)
-    # train_dataloader = DataLoader(dataset=train_data, batch_size=200, shuffle=True)
-
-    # test_data = Data(X_test, y_test)
-    # test_dataloader = DataLoader(dataset=test_data, batch_size=200, shuffle=True)
-
-    # t_network.train(train_dataloader)
-    # t_network.predict(test_dataloader)
-
-    # # DELETE LATER ---------------------------------------------------------
-
+    y_predicted = np.array(y_predicted).reshape(-1).tolist()
 
     # Create csv file
     csv_predicton = 'prediction_neural_network.csv'
     with open(csv_predicton, 'w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile)
-
         # Write header
         csv_writer.writerow(['ID', 'Prediction'])
-
         for i, _ in enumerate(y_predicted, start=1):
             csv_writer.writerow([i, y_predicted[i-1]])
 

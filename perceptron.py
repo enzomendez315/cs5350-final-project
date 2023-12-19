@@ -188,29 +188,46 @@ def main():
     income_test_dataset.columns = ['age','workclass','fnlwgt','education','education-num','marital-status',
                                     'occupation','relationship','race','sex', 'capital-gain', 'capital-loss', 
                                     'hours-per-week', 'native-country']
-    income_test_dataset['label'] = ''
-        # Create copy of training dataset for predicting
+    income_test_dataset['label'] = 0
+
+    # Handle missing values
+    for feature in income_train_dataset.columns:
+        most_common_value = income_train_dataset[feature].value_counts().index[0]
+        if most_common_value == '?':
+                most_common_value = income_train_dataset[feature].value_counts().index[1]
+        income_train_dataset[feature] = income_train_dataset[feature].replace('?', most_common_value)
+        income_test_dataset[feature] = income_test_dataset[feature].replace('?', most_common_value)
+
+    # Convert non-numeric values to numbers
+    for feature, feature_values in income_features.items():
+        numeric_value = 1
+        for feature_value in feature_values:
+            income_train_dataset[feature] = income_train_dataset[feature].replace(feature_value, numeric_value)
+            income_test_dataset[feature] = income_test_dataset[feature].replace(feature_value, numeric_value)
+            numeric_value += 1
+
+    # Create copy of training dataset for predicting
     income_predicted_train_dataset = pd.DataFrame(income_train_dataset)
     income_predicted_train_dataset['label'] = ''   # or = np.nan for numerical columns
-        # Results using standard perceptron
+    # Results using standard perceptron
     standard_weights = perceptron.train_standard(income_train_dataset, 10, 0.5)
     income_predicted_train_dataset = perceptron.predict_standard(income_predicted_train_dataset, standard_weights)
     income_test_dataset = perceptron.predict_standard(income_test_dataset, standard_weights)
-    #     # Results using voted perceptron
+    ## Results using voted perceptron
     # voted_weights, votes = perceptron.train_voted(income_train_dataset, 10, 0.5)
     # income_predicted_train_dataset = perceptron.predict_voted(income_predicted_train_dataset, voted_weights, votes)
     # income_test_dataset = perceptron.predict_voted(income_test_dataset, voted_weights, votes)
-    #     # Results using averaged perceptron
+    ## Results using averaged perceptron
     # averaged_weights = perceptron.train_averaged(income_train_dataset, 10, 0.5)
     # income_predicted_train_dataset = perceptron.predict_averaged(income_predicted_train_dataset, averaged_weights)
     # income_test_dataset = perceptron.predict_averaged(income_test_dataset, averaged_weights)
-        # Get array predictions
+    # Get array predictions
     y_train = income_train_dataset['label'].to_numpy()
     y_train_predicted = income_predicted_train_dataset['label'].to_numpy()
     y_test_predicted = income_test_dataset['label'].to_numpy()
     income_training_error = perceptron.compute_error(y_train, y_train_predicted)
 
-    print('The training error for this tree is', income_training_error)
+    print('The training error is', income_training_error)
     print('Score is', roc_auc_score(y_train, y_train_predicted))
 
     # Create csv file
